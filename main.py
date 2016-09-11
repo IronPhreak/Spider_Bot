@@ -4,42 +4,54 @@ from spider import Spider
 from domain import *
 from general import *
 
-PROJECT_NAME = 'thenewboston'
-HOMEPAGE = 'https://thenewboston.com'
-DOMAIN_NAME = get_domain_name(HOMEPAGE)
-QUEUE_FILE = PROJECT_NAME + "/queue.txt"
-CRAWLED_FILE = PROJECT_NAME + "/crawled.txt"
-NUMBER_OF_THREADS = 8
-queue = Queue()
-Spider(PROJECT_NAME,HOMEPAGE,DOMAIN_NAME)
 
-def work():
-    while True:
-        url = queue.get()
-        Spider.crawl_page(threading.current_thread().name,url)
-        queue.task_done()
+class crawler():
+    PROJECT_NAME = ''
+    HOMEPAGE = ''
+    DOMAIN_NAME = get_domain_name(HOMEPAGE)
+    QUEUE_FILE = ''
+    CRAWLED_FILE = ''
+    NUMBER_OF_THREADS = 8
+    queue = Queue()
 
+    @staticmethod
+    def work():
+        while True:
+            url = crawler.queue.get()
+            Spider.crawl_page(threading.current_thread().name, url)
+            crawler.queue.task_done()
 
-def create_workers():
-    for _ in range(NUMBER_OF_THREADS):
-        t = threading.Thread(target=work)
-        t.daemon = True
-        t.start()
-
-
-def crawl():
-    queued_linked = file_to_set(QUEUE_FILE)
-    if len(queued_linked) > 0:
-        print(str(len(queued_linked)) + " links in the queue")
-        create_jobs()
+    @staticmethod
+    def create_workers():
+        for _ in range(crawler.NUMBER_OF_THREADS):
+            t = threading.Thread(target=crawler.work)
+            t.daemon = True
+            t.start()
 
 
-def create_jobs():
-    for link in file_to_set(QUEUE_FILE):
-        queue.put(link)
-    queue.join()
-    crawl()
+    @staticmethod
+    def crawl():
+        queued_linked = file_to_set(crawler.QUEUE_FILE)
+        if len(queued_linked) > 0:
+            print(str(len(queued_linked)) + " links in the queue")
+            crawler.create_jobs()
+
+    @staticmethod
+    def create_jobs():
+        for link in file_to_set(crawler.QUEUE_FILE):
+            crawler.queue.put(link)
+        crawler.queue.join()
+        crawler.crawl()
+
+    @staticmethod
+    def setup_project():
+        crawler.PROJECT_NAME = input("What is the name of your project?: ")
+        crawler.HOMEPAGE = input("What is your homepage?: ")
+        crawler.QUEUE_FILE = crawler.PROJECT_NAME + "/queue.txt"
+        crawler.CRAWLED_FILE = crawler.PROJECT_NAME + "/crawled.txt"
+        Spider(crawler.PROJECT_NAME, crawler.HOMEPAGE, crawler.DOMAIN_NAME)
 
 
-create_workers()
-crawl()
+crawler.setup_project()
+crawler.create_workers()
+crawler.crawl()
